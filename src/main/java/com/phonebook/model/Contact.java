@@ -73,7 +73,7 @@ public class Contact {
         }
     }
 
-    public LocalDateTime getCreatedAt() { return createdAt }
+    public LocalDateTime getCreatedAt() { return createdAt; }
 
-    public LocalDateTime getUpdatedAt() { return updatedAt }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
 }
