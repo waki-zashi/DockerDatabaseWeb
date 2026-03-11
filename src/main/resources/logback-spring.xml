@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <!-- Консольный вывод с цветами и эмодзи -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>
@@ -9,7 +8,6 @@
         </encoder>
     </appender>
 
-    <!-- Файловый лог (на всякий случай) -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>logs/phonebook.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
@@ -21,7 +19,6 @@
         </encoder>
     </appender>
 
-    <!-- Логи для разных пакетов -->
     <logger name="com.phonebook" level="DEBUG" additivity="false">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
