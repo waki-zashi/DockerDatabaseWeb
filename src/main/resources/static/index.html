@@ -1,37 +1,37 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Телефонная книга</title>
+    <title>Phone Book</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1>📞 Телефонная книга</h1>
+        <h1>Phone Book</h1>
         
         <div class="search-section">
-            <input type="text" id="searchInput" placeholder="Поиск по имени, телефону или заметке...">
-            <button onclick="searchContacts()">🔍 Поиск</button>
-            <button onclick="loadAllContacts()">Показать все</button>
+            <input type="text" id="searchInput" placeholder="Search by name, phone or note...">
+            <button onclick="searchContacts()">Search</button>
+            <button onclick="loadAllContacts()">Show all</button>
         </div>
         
         <div class="form-section">
-            <h2>➕ Добавить контакт</h2>
+            <h2>Add contact</h2>
             <form id="contactForm">
                 <input type="hidden" id="contactId">
-                <input type="text" id="fullName" placeholder="ФИО *" required>
-                <input type="tel" id="phoneNumber" placeholder="Телефон *" required>
-                <textarea id="note" placeholder="Заметка (необязательно)"></textarea>
+                <input type="text" id="fullName" placeholder="Full name *" required>
+                <input type="tel" id="phoneNumber" placeholder="Phone number *" required>
+                <textarea id="note" placeholder="Note (optional)"></textarea>
                 <div class="form-buttons">
-                    <button type="submit" class="save-btn">💾 Сохранить</button>
-                    <button type="button" class="clear-btn" onclick="clearForm()">🔄 Очистить</button>
+                    <button type="submit" class="save-btn">Save</button>
+                    <button type="button" class="clear-btn" onclick="clearForm()">Clear</button>
                 </div>
             </form>
         </div>
         
         <div class="contacts-section">
-            <h2>📋 Мои контакты</h2>
+            <h2>My contacts</h2>
             <div id="contactsList" class="contacts-grid"></div>
         </div>
     </div>
