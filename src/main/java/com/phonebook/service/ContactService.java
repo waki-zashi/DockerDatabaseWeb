@@ -4,117 +4,184 @@ import com.phonebook.model.Contact;
 import com.phonebook.repository.ContactRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class ContactService {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(ContactService.class);
-    
-    @Autowired
-    private ContactRepository contactRepository;
-    
+
+    private final ContactRepository contactRepository;
+
+    public ContactService(ContactRepository contactRepository) {
+        this.contactRepository = contactRepository;
+    }
+
     @Transactional
     public Contact createContact(Contact contact) {
-        logger.info("💾 Сохранение нового контакта в БД: '{}'", contact.getFullName());
-        
+
+        if (contact == null) {
+            logger.warn("Attempt to save null contact");
+            throw new IllegalArgumentException("Contact cannot be null");
+        }
+
         try {
+
             Contact savedContact = contactRepository.save(contact);
-            logger.info("✅ Контакт успешно сохранен в БД с ID: {}", savedContact.getId());
-            logger.debug("📊 Данные в БД: {}", savedContact);
+
+            logger.info("Contact saved with id {}", savedContact.getId());
+
             return savedContact;
+
         } catch (Exception e) {
-            logger.error("❌ Ошибка при сохранении контакта в БД: {}", e.getMessage());
-            throw e;
+
+            logger.error("Database error while saving contact: {}", e.getMessage());
+
+            throw new RuntimeException("Database error");
         }
     }
-    
+
     @Transactional
     public Contact updateContact(Long id, Contact contactDetails) {
-        logger.info("🔄 Обновление контакта ID {} в БД", id);
-        
+
+        if (id == null || id <= 0) {
+            logger.warn("Invalid contact id {}", id);
+            throw new IllegalArgumentException("Invalid id");
+        }
+
+        if (contactDetails == null) {
+            logger.warn("Attempt to update contact with null data");
+            throw new IllegalArgumentException("Contact data cannot be null");
+        }
+
         Contact contact = contactRepository.findById(id)
-            .orElseThrow(() -> {
-                logger.error("❌ Контакт с ID {} не найден в БД", id);
-                return new RuntimeException("Contact not found");
-            });
-        
-        logger.debug("📊 Текущие данные в БД: имя='{}', телефон='{}'", 
-            contact.getFullName(), contact.getPhoneNumber());
-        
+                .orElseThrow(() -> {
+                    logger.warn("Contact not found {}", id);
+                    return new RuntimeException("Contact not found");
+                });
+
         contact.setFullName(contactDetails.getFullName());
         contact.setPhoneNumber(contactDetails.getPhoneNumber());
         contact.setNote(contactDetails.getNote());
-        
-        Contact updatedContact = contactRepository.save(contact);
-        logger.info("✅ Контакт ID {} успешно обновлен в БД", id);
-        logger.debug("📊 Новые данные в БД: имя='{}', телефон='{}'", 
-            updatedContact.getFullName(), updatedContact.getPhoneNumber());
-        
-        return updatedContact;
+
+        try {
+
+            Contact updatedContact = contactRepository.save(contact);
+
+            logger.info("Contact updated {}", id);
+
+            return updatedContact;
+
+        } catch (Exception e) {
+
+            logger.error("Database error while updating contact {}: {}", id, e.getMessage());
+
+            throw new RuntimeException("Database error");
+        }
     }
-    
+
     @Transactional
     public void deleteContact(Long id) {
-        logger.info("🗑️ Удаление контакта ID {} из БД", id);
-        
+
+        if (id == null || id <= 0) {
+            logger.warn("Invalid contact id {}", id);
+            throw new IllegalArgumentException("Invalid id");
+        }
+
         Contact contact = contactRepository.findById(id)
-            .orElseThrow(() -> {
-                logger.error("❌ Контакт с ID {} не найден в БД", id);
-                return new RuntimeException("Contact not found");
-            });
-        
-        logger.info("Найден контакт для удаления: '{}'", contact.getFullName());
-        contactRepository.delete(contact);
-        logger.info("✅ Контакт ID {} удален из БД", id);
+                .orElseThrow(() -> {
+                    logger.warn("Contact not found {}", id);
+                    return new RuntimeException("Contact not found");
+                });
+
+        try {
+
+            contactRepository.delete(contact);
+
+            logger.info("Contact deleted {}", id);
+
+        } catch (Exception e) {
+
+            logger.error("Database error while deleting contact {}: {}", id, e.getMessage());
+
+            throw new RuntimeException("Database error");
+        }
     }
-    
+
     public List<Contact> getAllContacts() {
-        logger.info("📊 Запрос всех контактов из БД");
-        long startTime = System.currentTimeMillis();
-        
-        List<Contact> contacts = contactRepository.findAll();
-        
-        long endTime = System.currentTimeMillis();
-        logger.info("✅ Получено {} контактов из БД (время запроса: {} мс)", 
-            contacts.size(), (endTime - startTime));
-        
-        return contacts;
+
+        try {
+
+            List<Contact> contacts = contactRepository.findAll();
+
+            logger.info("Contacts retrieved: {}", contacts.size());
+
+            return contacts;
+
+        } catch (Exception e) {
+
+            logger.error("Database error while retrieving contacts: {}", e.getMessage());
+
+            return Collections.emptyList();
+        }
     }
-    
+
     public Optional<Contact> getContactById(Long id) {
-        logger.info("🔍 Поиск контакта в БД по ID: {}", id);
-        
-        Optional<Contact> contact = contactRepository.findById(id);
-        
-        if (contact.isPresent()) {
-            logger.info("✅ Контакт найден в БД: '{}'", contact.get().getFullName());
-        } else {
-            logger.info("❌ Контакт с ID {} не найден в БД", id);
+
+        if (id == null || id <= 0) {
+            logger.warn("Invalid contact id {}", id);
+            return Optional.empty();
         }
-        
-        return contact;
+
+        try {
+
+            Optional<Contact> contact = contactRepository.findById(id);
+
+            if (contact.isPresent()) {
+                logger.info("Contact found {}", id);
+            } else {
+                logger.warn("Contact not found {}", id);
+            }
+
+            return contact;
+
+        } catch (Exception e) {
+
+            logger.error("Database error while retrieving contact {}: {}", id, e.getMessage());
+
+            return Optional.empty();
+        }
     }
-    
+
     public List<Contact> searchContacts(String searchTerm) {
-        logger.info("🔎 Поиск в БД по запросу: '{}'", searchTerm);
-        long startTime = System.currentTimeMillis();
-        
-        List<Contact> results = contactRepository.search(searchTerm);
-        
-        long endTime = System.currentTimeMillis();
-        logger.info("✅ Поиск завершен. Найдено {} результатов (время: {} мс)", 
-            results.size(), (endTime - startTime));
-        
-        if (!results.isEmpty()) {
-            logger.debug("📊 Результаты поиска: {}", 
-                results.stream().map(Contact::getFullName).toList());
+
+        if (searchTerm == null || searchTerm.trim().isEmpty()) {
+            return Collections.emptyList();
         }
-        
-        return results;
+
+        if (searchTerm.length() > 100) {
+            logger.warn("Search query too long");
+            return Collections.emptyList();
+        }
+
+        try {
+
+            List<Contact> results = contactRepository.search(searchTerm.trim());
+
+            logger.info("Search results: {}", results.size());
+
+            return results;
+
+        } catch (Exception e) {
+
+            logger.error("Database error during search: {}", e.getMessage());
+
+            return Collections.emptyList();
+        }
     }
 }

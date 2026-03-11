@@ -2,133 +2,186 @@ package com.phonebook.controller;
 
 import com.phonebook.model.Contact;
 import com.phonebook.service.ContactService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Collections;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/contacts")
 @CrossOrigin(origins = "*")
 public class ContactController {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(ContactController.class);
-    
-    @Autowired
-    private ContactService contactService;
-    
-    @GetMapping
-    public List<Contact> getAllContacts() {
-        logger.info("📋 Получен запрос на список ВСЕХ контактов");
-        long startTime = System.currentTimeMillis();
-        
-        List<Contact> contacts = contactService.getAllContacts();
-        
-        long endTime = System.currentTimeMillis();
-        logger.info("✅ УСПЕШНО: найдено {} контактов (время выполнения: {} мс)", 
-            contacts.size(), (endTime - startTime));
-        
-        if (contacts.isEmpty()) {
-            logger.warn("⚠️ Внимание: в телефонной книге нет контактов");
-        }
-        
-        return contacts;
+
+    private final ContactService contactService;
+
+    public ContactController(ContactService contactService) {
+        this.contactService = contactService;
     }
-    
+
+    @GetMapping
+    public ResponseEntity<List<Contact>> getAllContacts() {
+
+        try {
+
+            logger.info("Request received: get all contacts");
+
+            List<Contact> contacts = contactService.getAllContacts();
+
+            return ResponseEntity.ok(contacts);
+
+        } catch (Exception e) {
+
+            logger.error("Error retrieving contacts: {}", e.getMessage());
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.emptyList());
+        }
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Contact> getContactById(@PathVariable Long id) {
-        logger.info("🔍 Поиск контакта по ID: {}", id);
-        
-        return contactService.getContactById(id)
-            .map(contact -> {
-                logger.info("✅ Найден контакт: '{}' с телефоном {}", 
-                    contact.getFullName(), contact.getPhoneNumber());
-                return ResponseEntity.ok(contact);
-            })
-            .orElseGet(() -> {
-                logger.error("❌ ОШИБКА: контакт с ID {} не найден", id);
-                return ResponseEntity.notFound().build();
-            });
-    }
-    
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public Contact createContact(@RequestBody Contact contact) {
-        logger.info("➕ СОЗДАНИЕ нового контакта: '{}'", contact.getFullName());
-        logger.debug("📝 Детали: телефон='{}', заметка='{}'", 
-            contact.getPhoneNumber(), 
-            contact.getNote() != null ? contact.getNote() : "пусто");
-        
+
+        if (id == null || id <= 0) {
+            logger.warn("Invalid contact ID: {}", id);
+            return ResponseEntity.badRequest().build();
+        }
+
         try {
-            Contact savedContact = contactService.createContact(contact);
-            logger.info("✅ УСПЕШНО: контакт '{}' создан с ID: {}", 
-                savedContact.getFullName(), savedContact.getId());
-            return savedContact;
+
+            return contactService.getContactById(id)
+                    .map(ResponseEntity::ok)
+                    .orElseGet(() -> {
+                        logger.warn("Contact not found: {}", id);
+                        return ResponseEntity.notFound().build();
+                    });
+
         } catch (Exception e) {
-            logger.error("❌ ОШИБКА при создании контакта: {}", e.getMessage());
-            throw e;
+
+            logger.error("Error retrieving contact {}: {}", id, e.getMessage());
+
+            return ResponseEntity.internalServerError().build();
         }
     }
-    
+
+    @PostMapping
+    public ResponseEntity<?> createContact(@Valid @RequestBody Contact contact) {
+
+        if (contact == null) {
+            logger.warn("Attempt to create null contact");
+            return ResponseEntity.badRequest().body("Contact cannot be null");
+        }
+
+        try {
+
+            Contact saved = contactService.createContact(contact);
+
+            logger.info("Contact created with id {}", saved.getId());
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+
+        } catch (Exception e) {
+
+            logger.error("Error creating contact: {}", e.getMessage());
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error creating contact");
+        }
+    }
+
     @PutMapping("/{id}")
-    public ResponseEntity<Contact> updateContact(@PathVariable Long id, @RequestBody Contact contact) {
-        logger.info("✏️ ОБНОВЛЕНИЕ контакта ID: {}", id);
-        logger.debug("📝 Новые данные: имя='{}', телефон='{}'", 
-            contact.getFullName(), contact.getPhoneNumber());
-        
+    public ResponseEntity<?> updateContact(@PathVariable Long id,
+                                           @Valid @RequestBody Contact contact) {
+
+        if (id == null || id <= 0) {
+            return ResponseEntity.badRequest().body("Invalid contact id");
+        }
+
+        if (contact == null) {
+            return ResponseEntity.badRequest().body("Contact cannot be null");
+        }
+
         try {
-            Contact updatedContact = contactService.updateContact(id, contact);
-            logger.info("✅ УСПЕШНО: контакт ID {} обновлен", id);
-            logger.debug("📊 После обновления: имя='{}', телефон='{}'", 
-                updatedContact.getFullName(), updatedContact.getPhoneNumber());
-            return ResponseEntity.ok(updatedContact);
+
+            Contact updated = contactService.updateContact(id, contact);
+
+            logger.info("Contact updated: {}", id);
+
+            return ResponseEntity.ok(updated);
+
         } catch (RuntimeException e) {
-            logger.error("❌ ОШИБКА обновления контакта ID {}: {}", id, e.getMessage());
+
+            logger.warn("Contact not found: {}", id);
+
             return ResponseEntity.notFound().build();
+
+        } catch (Exception e) {
+
+            logger.error("Error updating contact {}: {}", id, e.getMessage());
+
+            return ResponseEntity.internalServerError().build();
         }
     }
-    
+
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteContact(@PathVariable Long id) {
-        logger.info("🗑️ УДАЛЕНИЕ контакта ID: {}", id);
-        
+    public ResponseEntity<?> deleteContact(@PathVariable Long id) {
+
+        if (id == null || id <= 0) {
+            return ResponseEntity.badRequest().body("Invalid contact id");
+        }
+
         try {
-            // Сначала проверим, существует ли контакт (для информативного логирования)
-            contactService.getContactById(id).ifPresentOrElse(
-                contact -> logger.info("Найден контакт для удаления: '{}'", contact.getFullName()),
-                () -> logger.warn("Контакт с ID {} не найден, возможно уже удален", id)
-            );
-            
+
             contactService.deleteContact(id);
-            logger.info("✅ УСПЕШНО: контакт ID {} удален", id);
+
+            logger.info("Contact deleted: {}", id);
+
             return ResponseEntity.ok().build();
+
         } catch (RuntimeException e) {
-            logger.error("❌ ОШИБКА при удалении контакта ID {}: {}", id, e.getMessage());
+
+            logger.warn("Contact not found: {}", id);
+
             return ResponseEntity.notFound().build();
+
+        } catch (Exception e) {
+
+            logger.error("Error deleting contact {}: {}", id, e.getMessage());
+
+            return ResponseEntity.internalServerError().build();
         }
     }
-    
+
     @GetMapping("/search")
-    public List<Contact> searchContacts(@RequestParam String q) {
-        logger.info("🔎 ПОИСК контактов по запросу: '{}'", q);
-        long startTime = System.currentTimeMillis();
-        
-        List<Contact> results = contactService.searchContacts(q);
-        
-        long endTime = System.currentTimeMillis();
-        logger.info("✅ Найдено {} контактов по запросу '{}' (время: {} мс)", 
-            results.size(), q, (endTime - startTime));
-        
-        if (results.isEmpty()) {
-            logger.info("📭 Ничего не найдено по запросу: '{}'", q);
-        } else {
-            logger.debug("🔍 Результаты поиска: {}", 
-                results.stream().map(Contact::getFullName).toList());
+    public ResponseEntity<List<Contact>> searchContacts(@RequestParam String q) {
+
+        if (q == null || q.trim().isEmpty()) {
+            return ResponseEntity.ok(Collections.emptyList());
         }
-        
-        return results;
+
+        if (q.length() > 100) {
+            logger.warn("Search query too long");
+            return ResponseEntity.badRequest().body(Collections.emptyList());
+        }
+
+        try {
+
+            List<Contact> results = contactService.searchContacts(q.trim());
+
+            return ResponseEntity.ok(results);
+
+        } catch (Exception e) {
+
+            logger.error("Search error: {}", e.getMessage());
+
+            return ResponseEntity.internalServerError()
+                    .body(Collections.emptyList());
+        }
     }
 }
