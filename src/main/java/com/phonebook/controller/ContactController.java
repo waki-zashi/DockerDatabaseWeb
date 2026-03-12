@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/contacts")
@@ -29,6 +30,14 @@ public class ContactController {
         logger.info("Request received: get all contacts");
         List<Contact> contacts = contactService.getAllContacts();
         return ResponseEntity.ok(contacts);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Contact> getContactById(@PathVariable Long id) {
+        logger.info("Fetching contact with id: {}", id);
+        Optional<Contact> contact = contactService.getContactById(id);
+        return contact.map(ResponseEntity::ok)
+                      .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping
@@ -60,13 +69,11 @@ public class ContactController {
         if (q == null || q.trim().isEmpty()) {
             return ResponseEntity.ok(Collections.emptyList());
         }
-
         String trimmed = q.trim();
         if (trimmed.length() > 100) {
             logger.warn("Search query too long: {}", trimmed.length());
             return ResponseEntity.badRequest().body(Collections.emptyList());
         }
-
         logger.info("Searching for: {}", trimmed);
         List<Contact> results = contactService.searchContacts(trimmed);
         return ResponseEntity.ok(results);
