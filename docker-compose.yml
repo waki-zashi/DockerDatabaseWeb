@@ -8,7 +8,6 @@ services:
       POSTGRES_DB: phonebook
       POSTGRES_USER: ${POSTGRES_USER:-admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin123}
-      # или POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password   ← это можно оставить, postgres поддерживает
     ports:
       - "5432:5432"
     volumes:
