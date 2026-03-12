@@ -1,6 +1,7 @@
 package com.phonebook.service;
 
 import com.phonebook.dto.ContactDto;
+import com.phonebook.exception.ContactNotFoundException;
 import com.phonebook.model.Contact;
 import com.phonebook.repository.ContactRepository;
 import org.slf4j.Logger;
@@ -17,7 +18,6 @@ import java.util.Optional;
 public class ContactService {
 
     private static final Logger logger = LoggerFactory.getLogger(ContactService.class);
-
     private final ContactRepository contactRepository;
 
     public ContactService(ContactRepository contactRepository) {
@@ -26,179 +26,62 @@ public class ContactService {
 
     @Transactional
     public Contact createContact(ContactDto dto) {
-
-        if (dto == null) {
-            logger.warn("Attempt to save null contact");
-            throw new IllegalArgumentException("Contact cannot be null");
-        }
-
-        try {
-
-            Contact contact = new Contact();
-            mapDtoToEntity(dto, contact);
-
-            Contact savedContact = contactRepository.save(contact);
-
-            logger.info("Contact saved with id {}", savedContact.getId());
-
-            return savedContact;
-
-        } catch (Exception e) {
-
-            logger.error("Database error while saving contact: {}", e.getMessage());
-
-            throw new RuntimeException("Database error");
-        }
+        Contact contact = new Contact();
+        mapDtoToEntity(dto, contact);
+        Contact saved = contactRepository.save(contact);
+        logger.info("Contact saved with id {}", saved.getId());
+        return saved;
     }
 
     @Transactional
     public Contact updateContact(Long id, ContactDto dto) {
-
-        if (id == null || id <= 0) {
-            logger.warn("Invalid contact id {}", id);
-            throw new IllegalArgumentException("Invalid id");
-        }
-
-        if (dto == null) {
-            logger.warn("Attempt to update contact with null data");
-            throw new IllegalArgumentException("Contact data cannot be null");
-        }
-
+        validateId(id);
         Contact contact = contactRepository.findById(id)
-                .orElseThrow(() -> {
-                    logger.warn("Contact not found {}", id);
-                    return new RuntimeException("Contact not found");
-                });
-
+                .orElseThrow(() -> new ContactNotFoundException(id));
         mapDtoToEntity(dto, contact);
-
-        try {
-
-            Contact updatedContact = contactRepository.save(contact);
-
-            logger.info("Contact updated {}", id);
-
-            return updatedContact;
-
-        } catch (Exception e) {
-
-            logger.error("Database error while updating contact {}: {}", id, e.getMessage());
-
-            throw new RuntimeException("Database error");
-        }
-    }
-
-    private void mapDtoToEntity(ContactDto dto, Contact contact) {
-
-        contact.setFullName(HtmlUtils.htmlEscape(dto.getFullName()));
-        contact.setPhoneNumber(HtmlUtils.htmlEscape(dto.getPhoneNumber()));
-
-        if (dto.getNote() != null) {
-            contact.setNote(HtmlUtils.htmlEscape(dto.getNote()));
-        }
+        Contact updated = contactRepository.save(contact);
+        logger.info("Contact updated {}", id);
+        return updated;
     }
 
     @Transactional
     public void deleteContact(Long id) {
-
-        if (id == null || id <= 0) {
-            logger.warn("Invalid contact id {}", id);
-            throw new IllegalArgumentException("Invalid id");
-        }
-
+        validateId(id);
         Contact contact = contactRepository.findById(id)
-                .orElseThrow(() -> {
-                    logger.warn("Contact not found {}", id);
-                    return new RuntimeException("Contact not found");
-                });
-
-        try {
-
-            contactRepository.delete(contact);
-
-            logger.info("Contact deleted {}", id);
-
-        } catch (Exception e) {
-
-            logger.error("Database error while deleting contact {}: {}", id, e.getMessage());
-
-            throw new RuntimeException("Database error");
-        }
+                .orElseThrow(() -> new ContactNotFoundException(id));
+        contactRepository.delete(contact);
+        logger.info("Contact deleted {}", id);
     }
 
     public List<Contact> getAllContacts() {
-
-        try {
-
-            List<Contact> contacts = contactRepository.findAll();
-
-            logger.info("Contacts retrieved: {}", contacts.size());
-
-            return contacts;
-
-        } catch (Exception e) {
-
-            logger.error("Database error while retrieving contacts: {}", e.getMessage());
-
-            return Collections.emptyList();
-        }
+        return contactRepository.findAll();
     }
 
     public Optional<Contact> getContactById(Long id) {
-
-        if (id == null || id <= 0) {
-            logger.warn("Invalid contact id {}", id);
-            return Optional.empty();
-        }
-
-        try {
-
-            Optional<Contact> contact = contactRepository.findById(id);
-
-            if (contact.isPresent()) {
-                logger.info("Contact found {}", id);
-            } else {
-                logger.warn("Contact not found {}", id);
-            }
-
-            return contact;
-
-        } catch (Exception e) {
-
-            logger.error("Database error while retrieving contact {}: {}", id, e.getMessage());
-
-            return Optional.empty();
-        }
+        validateId(id);
+        return contactRepository.findById(id);
     }
 
     public List<Contact> searchContacts(String searchTerm) {
-
-        if (searchTerm == null || searchTerm.trim().isEmpty()) {
+        if (searchTerm.isEmpty()) {
             return Collections.emptyList();
         }
+        String safeTerm = searchTerm
+                .replace("%", "\\%")
+                .replace("_", "\\_");
+        return contactRepository.search(safeTerm);
+    }
 
-        if (searchTerm.length() > 100) {
-            logger.warn("Search query too long");
-            return Collections.emptyList();
+    private void validateId(Long id) {
+        if (id == null || id <= 0) {
+            logger.warn("Invalid contact id: {}", id);
+            throw new IllegalArgumentException("Invalid contact id");
         }
+    }
 
-        try {
-
-            String safeSearchTerm = searchTerm.trim()
-                    .replace("%", "\\%")
-                    .replace("_", "\\_");
-
-            List<Contact> results = contactRepository.search(safeSearchTerm);
-
-            logger.info("Search results: {}", results.size());
-
-            return results;
-
-        } catch (Exception e) {
-
-            logger.error("Database error during search: {}", e.getMessage());
-
-            return Collections.emptyList();
-        }
+    private void mapDtoToEntity(ContactDto dto, Contact contact) {
+        contact.setFullName(HtmlUtils.htmlEscape(dto.getFullName()));
+        contact.setPhoneNumber(HtmlUtils.htmlEscape(dto.getPhoneNumber()));
+        contact.setNote(dto.getNote() != null ? HtmlUtils.htmlEscape(dto.getNote()) : null);
     }
 }
