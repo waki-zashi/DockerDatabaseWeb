@@ -1,11 +1,13 @@
 package com.phonebook.service;
 
+import com.phonebook.dto.ContactDto;
 import com.phonebook.model.Contact;
 import com.phonebook.repository.ContactRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.HtmlUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -23,14 +25,17 @@ public class ContactService {
     }
 
     @Transactional
-    public Contact createContact(Contact contact) {
+    public Contact createContact(ContactDto dto) {
 
-        if (contact == null) {
+        if (dto == null) {
             logger.warn("Attempt to save null contact");
             throw new IllegalArgumentException("Contact cannot be null");
         }
 
         try {
+
+            Contact contact = new Contact();
+            mapDtoToEntity(dto, contact);
 
             Contact savedContact = contactRepository.save(contact);
 
@@ -47,14 +52,14 @@ public class ContactService {
     }
 
     @Transactional
-    public Contact updateContact(Long id, Contact contactDetails) {
+    public Contact updateContact(Long id, ContactDto dto) {
 
         if (id == null || id <= 0) {
             logger.warn("Invalid contact id {}", id);
             throw new IllegalArgumentException("Invalid id");
         }
 
-        if (contactDetails == null) {
+        if (dto == null) {
             logger.warn("Attempt to update contact with null data");
             throw new IllegalArgumentException("Contact data cannot be null");
         }
@@ -65,9 +70,7 @@ public class ContactService {
                     return new RuntimeException("Contact not found");
                 });
 
-        contact.setFullName(contactDetails.getFullName());
-        contact.setPhoneNumber(contactDetails.getPhoneNumber());
-        contact.setNote(contactDetails.getNote());
+        mapDtoToEntity(dto, contact);
 
         try {
 
@@ -82,6 +85,16 @@ public class ContactService {
             logger.error("Database error while updating contact {}: {}", id, e.getMessage());
 
             throw new RuntimeException("Database error");
+        }
+    }
+
+    private void mapDtoToEntity(ContactDto dto, Contact contact) {
+
+        contact.setFullName(HtmlUtils.htmlEscape(dto.getFullName()));
+        contact.setPhoneNumber(HtmlUtils.htmlEscape(dto.getPhoneNumber()));
+
+        if (dto.getNote() != null) {
+            contact.setNote(HtmlUtils.htmlEscape(dto.getNote()));
         }
     }
 
@@ -171,7 +184,11 @@ public class ContactService {
 
         try {
 
-            List<Contact> results = contactRepository.search(searchTerm.trim());
+            String safeSearchTerm = searchTerm.trim()
+                    .replace("%", "\\%")
+                    .replace("_", "\\_");
+
+            List<Contact> results = contactRepository.search(safeSearchTerm);
 
             logger.info("Search results: {}", results.size());
 

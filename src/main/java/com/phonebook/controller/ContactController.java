@@ -1,5 +1,6 @@
 package com.phonebook.controller;
 
+import com.phonebook.dto.ContactDto;
 import com.phonebook.model.Contact;
 import com.phonebook.service.ContactService;
 import jakarta.validation.Valid;
@@ -14,7 +15,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/contacts")
-@CrossOrigin(origins = "*")
 public class ContactController {
 
     private static final Logger logger = LoggerFactory.getLogger(ContactController.class);
@@ -45,42 +45,17 @@ public class ContactController {
         }
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Contact> getContactById(@PathVariable Long id) {
-
-        if (id == null || id <= 0) {
-            logger.warn("Invalid contact ID: {}", id);
-            return ResponseEntity.badRequest().build();
-        }
-
-        try {
-
-            return contactService.getContactById(id)
-                    .map(ResponseEntity::ok)
-                    .orElseGet(() -> {
-                        logger.warn("Contact not found: {}", id);
-                        return ResponseEntity.notFound().build();
-                    });
-
-        } catch (Exception e) {
-
-            logger.error("Error retrieving contact {}: {}", id, e.getMessage());
-
-            return ResponseEntity.internalServerError().build();
-        }
-    }
-
     @PostMapping
-    public ResponseEntity<?> createContact(@Valid @RequestBody Contact contact) {
+    public ResponseEntity<?> createContact(@Valid @RequestBody ContactDto contactDto) {
 
-        if (contact == null) {
+        if (contactDto == null) {
             logger.warn("Attempt to create null contact");
             return ResponseEntity.badRequest().body("Contact cannot be null");
         }
 
         try {
 
-            Contact saved = contactService.createContact(contact);
+            Contact saved = contactService.createContact(contactDto);
 
             logger.info("Contact created with id {}", saved.getId());
 
@@ -97,19 +72,19 @@ public class ContactController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateContact(@PathVariable Long id,
-                                           @Valid @RequestBody Contact contact) {
+                                           @Valid @RequestBody ContactDto contactDto) {
 
         if (id == null || id <= 0) {
             return ResponseEntity.badRequest().body("Invalid contact id");
         }
 
-        if (contact == null) {
+        if (contactDto == null) {
             return ResponseEntity.badRequest().body("Contact cannot be null");
         }
 
         try {
 
-            Contact updated = contactService.updateContact(id, contact);
+            Contact updated = contactService.updateContact(id, contactDto);
 
             logger.info("Contact updated: {}", id);
 
