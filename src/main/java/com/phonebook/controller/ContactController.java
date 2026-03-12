@@ -18,7 +18,6 @@ import java.util.List;
 public class ContactController {
 
     private static final Logger logger = LoggerFactory.getLogger(ContactController.class);
-
     private final ContactService contactService;
 
     public ContactController(ContactService contactService) {
@@ -27,136 +26,49 @@ public class ContactController {
 
     @GetMapping
     public ResponseEntity<List<Contact>> getAllContacts() {
-
-        try {
-
-            logger.info("Request received: get all contacts");
-
-            List<Contact> contacts = contactService.getAllContacts();
-
-            return ResponseEntity.ok(contacts);
-
-        } catch (Exception e) {
-
-            logger.error("Error retrieving contacts: {}", e.getMessage());
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Collections.emptyList());
-        }
+        logger.info("Request received: get all contacts");
+        List<Contact> contacts = contactService.getAllContacts();
+        return ResponseEntity.ok(contacts);
     }
 
     @PostMapping
-    public ResponseEntity<?> createContact(@Valid @RequestBody ContactDto contactDto) {
-
-        if (contactDto == null) {
-            logger.warn("Attempt to create null contact");
-            return ResponseEntity.badRequest().body("Contact cannot be null");
-        }
-
-        try {
-
-            Contact saved = contactService.createContact(contactDto);
-
-            logger.info("Contact created with id {}", saved.getId());
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
-
-        } catch (Exception e) {
-
-            logger.error("Error creating contact: {}", e.getMessage());
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error creating contact");
-        }
+    public ResponseEntity<Contact> createContact(@Valid @RequestBody ContactDto contactDto) {
+        logger.info("Creating new contact");
+        Contact saved = contactService.createContact(contactDto);
+        logger.info("Contact created with id {}", saved.getId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateContact(@PathVariable Long id,
-                                           @Valid @RequestBody ContactDto contactDto) {
-
-        if (id == null || id <= 0) {
-            return ResponseEntity.badRequest().body("Invalid contact id");
-        }
-
-        if (contactDto == null) {
-            return ResponseEntity.badRequest().body("Contact cannot be null");
-        }
-
-        try {
-
-            Contact updated = contactService.updateContact(id, contactDto);
-
-            logger.info("Contact updated: {}", id);
-
-            return ResponseEntity.ok(updated);
-
-        } catch (RuntimeException e) {
-
-            logger.warn("Contact not found: {}", id);
-
-            return ResponseEntity.notFound().build();
-
-        } catch (Exception e) {
-
-            logger.error("Error updating contact {}: {}", id, e.getMessage());
-
-            return ResponseEntity.internalServerError().build();
-        }
+    public ResponseEntity<Contact> updateContact(
+            @PathVariable Long id,
+            @Valid @RequestBody ContactDto contactDto) {
+        logger.info("Updating contact {}", id);
+        Contact updated = contactService.updateContact(id, contactDto);
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteContact(@PathVariable Long id) {
-
-        if (id == null || id <= 0) {
-            return ResponseEntity.badRequest().body("Invalid contact id");
-        }
-
-        try {
-
-            contactService.deleteContact(id);
-
-            logger.info("Contact deleted: {}", id);
-
-            return ResponseEntity.ok().build();
-
-        } catch (RuntimeException e) {
-
-            logger.warn("Contact not found: {}", id);
-
-            return ResponseEntity.notFound().build();
-
-        } catch (Exception e) {
-
-            logger.error("Error deleting contact {}: {}", id, e.getMessage());
-
-            return ResponseEntity.internalServerError().build();
-        }
+    public ResponseEntity<Void> deleteContact(@PathVariable Long id) {
+        logger.info("Deleting contact {}", id);
+        contactService.deleteContact(id);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/search")
     public ResponseEntity<List<Contact>> searchContacts(@RequestParam String q) {
-
         if (q == null || q.trim().isEmpty()) {
             return ResponseEntity.ok(Collections.emptyList());
         }
 
-        if (q.length() > 100) {
-            logger.warn("Search query too long");
+        String trimmed = q.trim();
+        if (trimmed.length() > 100) {
+            logger.warn("Search query too long: {}", trimmed.length());
             return ResponseEntity.badRequest().body(Collections.emptyList());
         }
 
-        try {
-
-            List<Contact> results = contactService.searchContacts(q.trim());
-
-            return ResponseEntity.ok(results);
-
-        } catch (Exception e) {
-
-            logger.error("Search error: {}", e.getMessage());
-
-            return ResponseEntity.internalServerError()
-                    .body(Collections.emptyList());
-        }
+        logger.info("Searching for: {}", trimmed);
+        List<Contact> results = contactService.searchContacts(trimmed);
+        return ResponseEntity.ok(results);
     }
 }
