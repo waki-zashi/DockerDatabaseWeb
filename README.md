@@ -1,197 +1,299 @@
-# Phonebook
+# Phonebook — лабораторная работа
 
-**Phonebook** — это полноценное веб-приложение для управления телефонной книгой с акцентом на **защиту от "ошибок на дурака"**, строгую валидацию данных и надёжную обработку ошибок на всех уровнях.
+## Описание проекта
 
-Проект демонстрирует многоуровневую архитектуру с валидацией на фронтенде, бэкенде, JPA и **на уровне базы данных PostgreSQL** (через CHECK-констрейнты и триггеры PL/pgSQL).
+Phonebook — это веб-приложение для хранения и управления контактами телефонной книги.
+Пользователь может создавать, просматривать, редактировать, удалять и искать контакты через веб-интерфейс.
 
-## Основные особенности проекта
+Проект реализован как клиент-серверное приложение:
 
-- **Многоуровневая валидация данных**:
-  - Frontend (JavaScript) — базовые проверки + защита от XSS
-  - DTO + Bean Validation (`@Valid`, `@NotBlank`, `@Size`, `@Pattern`)
-  - JPA-сущность (`@NotBlank`, `@Size`, `@Pattern` + автоматический trim)
-  - База данных — **строгие CHECK + триггер** с кастомными английскими сообщениями об ошибках
-- **Глобальная обработка исключений** (`@RestControllerAdvice`) — единый формат ошибок для клиента
-- **Docker + docker-compose** — PostgreSQL + pgAdmin + приложение в контейнерах
-- **REST API** с полным CRUD + поиск
-- **Простой, но современный фронтенд** (HTML + CSS + vanilla JS)
-- **Логирование** через Logback (консоль + файл с ротацией)
-- **Безопасность**: экранирование HTML, защита от SQL-инъекций (JPA), ограничение длины, таймауты запросов
+* Backend написан на Java с использованием Spring Boot.
+* Данные хранятся в базе данных PostgreSQL.
+* Frontend представляет собой простую HTML-страницу с JavaScript, который взаимодействует с REST API сервера.
 
-## Архитектура
+В приложении реализованы основные операции над контактами (CRUD), поиск по контактам, а также базовые механизмы защиты и обработки ошибок.
+
+---
+
+# Архитектура проекта
+
+Проект состоит из следующих компонентов:
+
+## Backend
+
+Backend реализован на базе Spring Boot и предоставляет REST API.
+
+Основные слои приложения:
+
+### Controller
+
+Класс `ContactController` обрабатывает HTTP-запросы клиента и вызывает соответствующие методы сервисного слоя.
+
+Основные endpoints:
+
+GET /api/contacts
+Получить список всех контактов
+
+GET /api/contacts/{id}
+Получить контакт по идентификатору
+
+POST /api/contacts
+Создать новый контакт
+
+PUT /api/contacts/{id}
+Обновить существующий контакт
+
+DELETE /api/contacts/{id}
+Удалить контакт
+
+GET /api/contacts/search?q=...
+Поиск контактов по имени, телефону или заметке
+
+---
+
+### Service
+
+Класс `ContactService` реализует бизнес-логику приложения.
+
+Основные задачи сервиса:
+
+* работа с репозиторием
+* создание контактов
+* обновление контактов
+* удаление контактов
+* поиск контактов
+* логирование операций
+* обработка ошибок
+
+---
+
+### Repository
+
+Интерфейс `ContactRepository` реализован с использованием Spring Data JPA.
+
+Он отвечает за взаимодействие с базой данных PostgreSQL.
+
+Основные функции:
+
+* получение всех контактов
+* поиск контакта по id
+* сохранение контакта
+* удаление контакта
+* поиск по строке
+
+Поиск реализован через JPQL-запрос, который ищет совпадения в следующих полях:
+
+* имя контакта
+* номер телефона
+* заметка
+
+---
+
+### Model
+
+Класс `Contact` представляет сущность контакта, которая хранится в базе данных.
+
+Основные поля:
+
+* id — уникальный идентификатор
+* fullName — имя контакта
+* phoneNumber — номер телефона
+* note — дополнительная заметка
+* createdAt — дата создания
+
+---
+
+### GlobalExceptionHandler
+
+Класс `GlobalExceptionHandler` перехватывает ошибки, возникающие во время работы приложения, и возвращает корректные HTTP-ответы вместо падения сервера.
+
+Обрабатываются следующие типы ошибок:
+
+* ошибки валидации
+* некорректный JSON
+* неправильные типы параметров
+* ошибки базы данных
+* другие непредвиденные ошибки
+
+---
+
+# Frontend
+
+Frontend реализован на JavaScript и взаимодействует с сервером через REST API.
+
+Основные функции интерфейса:
+
+* загрузка всех контактов
+* создание контакта
+* редактирование контакта
+* удаление контакта
+* поиск контактов
+* отображение уведомлений
+* отображение индикатора загрузки
+
+JavaScript использует API fetch для отправки HTTP-запросов.
+
+Также реализованы:
+
+* защита от XSS атак
+* обработка сетевых ошибок
+* ограничение длины вводимых данных
+* таймаут HTTP-запросов
+
+---
+
+# База данных
+
+В проекте используется PostgreSQL.
+
+Таблица contacts содержит следующие поля:
+
+id
+full_name
+phone_number
+note
+created_at
+
+Для работы с базой данных используется Hibernate и Spring Data JPA.
+
+---
+
+# Технологии
+
+В проекте использованы следующие технологии:
+
+Java 21
+Spring Boot
+Spring Data JPA
+PostgreSQL
+Docker
+Maven
+HTML
+CSS
+JavaScript
+
+---
+
+# Запуск проекта
+
+## 1. Установка зависимостей
+
+Для запуска проекта необходимо установить:
+
+Java JDK 21
+Maven
+Docker
+PostgreSQL (через Docker)
+
+---
+
+## 2. Запуск PostgreSQL через Docker
+
+В корневой папке проекта находится файл docker-compose.yml.
+
+Запуск базы данных:
 
 ```
-Клиент (браузер) ── HTTP/REST ── Spring Boot (Controller → Service → Repository)
-                                                        │
-                                                        ▼
-                                             PostgreSQL + триггеры / CHECK
+docker compose up -d
 ```
 
-### Backend слои
+После запуска контейнера база данных PostgreSQL будет доступна для приложения.
 
-- **Controller** (`ContactController`) — маршрутизация, минимальные проверки
-- **Service** (`ContactService`) — бизнес-логика, маппинг DTO → Entity, экранирование
-- **Repository** (`ContactRepository`) — Spring Data JPA + кастомный JPQL-поиск
-- **Model** (`Contact`) — JPA-сущность с валидацией и lifecycle-методами (`@PrePersist`, `@PreUpdate`)
-- **DTO** (`ContactDto`) — входные/выходные данные с аннотациями валидации
-- **Exception Handling** (`GlobalExceptionHandler`) — централизованная обработка всех исключений
+---
 
-### Frontend
+## 3. Проверка базы данных
 
-- `index.html` + `style.css` + `script.js`
-- Vanilla JS + fetch API
-- Карточки контактов, форма, поиск, уведомления, лоадер
+При необходимости можно открыть pgAdmin и подключиться к базе данных.
 
-### База данных
+Параметры подключения:
 
-Таблица `contacts` с полями:
+Host: localhost
+Port: 5432
+Database: phonebook
+User: phonebook_user
+Password: phonebook_password
 
-- `id` SERIAL PRIMARY KEY
-- `full_name` VARCHAR(100) NOT NULL
-- `phone_number` VARCHAR(20) NOT NULL
-- `note` VARCHAR(500)
-- `created_at`, `updated_at` TIMESTAMP
+---
 
-**Защита на уровне БД** (файл `init.sql`):
+## 4. Сборка проекта
 
-- `NOT NULL` + ограничение длины
-- CHECK-констрейнты (формат, символы)
-- **Триггер BEFORE INSERT/UPDATE** → функция `validate_contact()` кидает `RAISE EXCEPTION` с понятным английским сообщением
+Перейти в корневую папку проекта:
 
-## Обработка исключений
-
-Проект реализует **многоуровневую и централизованную** обработку ошибок:
-
-### 1. Уровень БД (самый строгий)
-
-- Триггер PL/pgSQL возвращает понятные сообщения:
-  - "Full name cannot be empty or consist only of spaces"
-  - "Phone number can only contain digits, +, (, ), space and hyphen"
-  - "Note cannot exceed 500 characters"
-- Эти ошибки доходят до Hibernate → выбрасываются как `PSQLException` → ловятся в GlobalExceptionHandler
-
-### 2. Уровень Spring Boot
-
-- `@Valid` + Bean Validation → `MethodArgumentNotValidException`
-- Некорректный JSON → `HttpMessageNotReadableException`
-- Неверный тип параметра (`/api/contacts/abc`) → `MethodArgumentTypeMismatchException`
-- Кастомное исключение `ContactNotFoundException` → 404
-- `IllegalArgumentException` (невалидный id) → 400
-- Все остальные → 500 с минимальной информацией
-
-**GlobalExceptionHandler** возвращает единый JSON-формат:
-
-```json
-// Валидация поля
-{ "fullName": "Name must contain from 2 to 100 characters" }
-
-// Не найден
-{ "error": "Contact not found with id: 999" }
-
-// Общая ошибка
-{ "error": "Internal server error", "details": "..." }
+```
+cd phonebook
 ```
 
-### 3. Уровень фронтенда
+Собрать проект:
 
-- Проверки перед отправкой (обязательные поля, длина)
-- `sanitizeInput()` + `escapeHtml()` — защита от XSS
-- Обработка HTTP-ошибок + таймаут 8 сек
-- Уведомления (success / error / info) + лоадер
-
-## Технологический стек
-
-- **Backend**: Java 21, Spring Boot 3.2.0, Spring Data JPA, Hibernate, Jakarta Validation
-- **БД**: PostgreSQL 15 + PL/pgSQL триггеры
-- **Контейнеризация**: Docker, docker-compose
-- **Логирование**: Logback (консоль + rolling file)
-- **Frontend**: HTML5, CSS3 (градиенты, flex/grid, анимации), Vanilla JavaScript (fetch)
-- **Сборка**: Maven
-
-## Как запустить проект
-
-### Вариант 1 — Полностью через Docker (рекомендуется)
-
-1. Убедитесь, что установлен **Docker** и **Docker Compose**
-2. Создайте (или используйте существующий) файл `.env` в корне проекта:
-
-```env
-POSTGRES_USER=admin
-POSTGRES_PASSWORD=admin123
-PGADMIN_DEFAULT_EMAIL=admin@phonebook.com
-PGADMIN_DEFAULT_PASSWORD=admin
-SPRING_DATASOURCE_USERNAME=admin
-SPRING_DATASOURCE_PASSWORD=admin123
+```
+mvn clean install
 ```
 
-3. Запустите:
+---
 
-```bash
-docker compose up -d --build
+## 5. Запуск приложения
+
+Запуск Spring Boot приложения:
+
 ```
-
-4. Дождитесь запуска всех контейнеров (~30–60 сек)
-
-Готово! Открывайте:
-
-- Приложение: http://localhost:8080
-- pgAdmin: http://localhost:5050  
-
-### Вариант 2 — Локально (без Docker)
-
-1. Запустите PostgreSQL (например через Docker):
-
-```bash
-docker run -d --name phonebook-postgres \
-  -e POSTGRES_DB=phonebook \
-  -e POSTGRES_USER=admin \
-  -e POSTGRES_PASSWORD=admin123 \
-  -p 5432:5432 \
-  -v ./init.sql:/docker-entrypoint-initdb.d/init.sql \
-  postgres:15
-```
-
-2. Соберите проект:
-
-```bash
-mvn clean package
-```
-
-3. Запустите приложение:
-
-```bash
-java -jar target/phonebook-1.0.0.jar
-# или
 mvn spring-boot:run
 ```
 
-4. Откройте http://localhost:8080
+После запуска сервер будет доступен по адресу:
 
 ```
-
-## Полезные команды
-
-```bash
-# Пересобрать и запустить
-docker compose down && docker compose up -d --build
-
-# Логи приложения
-docker compose logs -f app
-
-# Логи базы
-docker compose logs -f postgres
-
-# Зайти в контейнер postgres
-docker compose exec postgres psql -U admin -d phonebook
-
-# Очистить volume (если нужно сбросить БД)
-docker compose down -v
+http://localhost:8080
 ```
 
-## Безопасность
+---
 
-- Нельзя вставить некорректные данные даже через pgAdmin / прямой SQL — триггер БД заблокирует
-- Все ошибки возвращаются в понятном JSON-формате
-- Защита от XSS (escapeHtml на фронте + HtmlUtils на бэкенде)
-- Таймауты и обработка сетевых ошибок на фронте
-- Логирование всех важных операций и ошибок
+# Использование приложения
+
+После запуска необходимо открыть в браузере:
+
+```
+http://localhost:8080
+```
+
+На странице можно:
+
+* добавить новый контакт
+* редактировать существующий контакт
+* удалить контакт
+* выполнить поиск
+
+Все операции выполняются через REST API.
+
+---
+
+# Обработка ошибок
+
+В проекте реализована обработка ошибок как на серверной, так и на клиентской стороне.
+
+Backend:
+
+* глобальный обработчик исключений
+* логирование операций
+* проверка входных данных
+
+Frontend:
+
+* проверка обязательных полей
+* защита от XSS
+* ограничение длины строк
+* обработка ошибок сети
+* таймаут HTTP-запросов
+
+---
+
+# Безопасность
+
+В проекте реализованы базовые механизмы безопасности:
+
+* защита от XSS атак
+* защита от SQL-инъекций
+* обработка некорректного JSON
+* валидация входных данных
+* безопасная работа с базой данных через JPA
+
+---
