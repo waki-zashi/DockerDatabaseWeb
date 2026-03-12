@@ -44,10 +44,35 @@ public class Contact {
         updatedAt = LocalDateTime.now();
     }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    // Getters
+    public Long getId() { 
+        return id; 
+    }
+    
+    public String getFullName() { 
+        return fullName; 
+    }
+    
+    public String getPhoneNumber() { 
+        return phoneNumber; 
+    }
+    
+    public String getNote() { 
+        return note; 
+    }
+    
+    public LocalDateTime getCreatedAt() { 
+        return createdAt; 
+    }
+    
+    public LocalDateTime getUpdatedAt() { 
+        return updatedAt; 
+    }
 
-    public String getFullName() { return fullName; }
+    // Setters
+    public void setId(Long id) { 
+        this.id = id; 
+    }
 
     public void setFullName(String fullName) {
         if (fullName != null) {
@@ -55,23 +80,15 @@ public class Contact {
         }
     }
 
-    public String getPhoneNumber() { return phoneNumber; }
-
     public void setPhoneNumber(String phoneNumber) {
         if (phoneNumber != null) {
             this.phoneNumber = phoneNumber.trim();
         }
     }
 
-    public String getNote() { return note; }
-
     public void setNote(String note) {
         if (note != null) {
             this.note = note.trim();
         }
     }
-
-    public LocalDateTime getCreatedAt() { return createdAt }
-
-    public LocalDateTime getUpdatedAt() { return updatedAt }
 }
