@@ -1,7 +1,3 @@
-package com.phonebook.controller;
-
-import com.phonebook.model.Contact;
-import com.phonebook.service.ContactService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
