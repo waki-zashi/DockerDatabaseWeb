@@ -3,7 +3,6 @@ const MAX_SEARCH_LENGTH = 100;
 const MAX_FIELD_LENGTH = 500;
 const REQUEST_TIMEOUT = 8000;
 
-// Глобальные функции
 document.addEventListener('DOMContentLoaded', () => {
     loadAllContacts();
 
