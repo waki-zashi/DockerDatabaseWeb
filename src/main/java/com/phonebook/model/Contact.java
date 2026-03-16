@@ -17,10 +17,11 @@ public class Contact {
     @Column(name = "full_name", nullable = false, length = 100)
     private String fullName;
 
-    @NotBlank(message = "Phone number is necessary")
+    @NotBlank(message = "Phone number is required")
+    @Size(min = 5, max = 20, message = "Phone number must be between 5 and 20 characters long")
     @Pattern(
-        regexp = "^[0-9+\\-() ]{5,20}$",
-        message = "Wrong format"
+        regexp = "^[0-9+()\\- ]+$",
+        message = "Phone number can only contain digits, spaces, +, -, ( and )"
     )
     @Column(name = "phone_number", nullable = false, length = 20)
     private String phoneNumber;

@@ -12,7 +12,8 @@ public class ContactDto {
     private String fullName;
 
     @NotBlank(message = "Phone number is required")
-    @Pattern(regexp = "^[0-9+() -]{5,20}$", message = "Invalid phone format")
+    @Size(min = 5, max = 20, message = "Phone number must be between 5 and 20 characters long")
+    @Pattern(regexp = "^[0-9+() \\-]+$", message = "Phone number can only contain digits, spaces, +, -, ( and )")
     private String phoneNumber;
 
     @Size(max = 500, message = "Note cannot exceed 500 characters")
