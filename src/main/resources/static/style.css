@@ -33,7 +33,6 @@ h2 {
     gap: 10px;
 }
 
-/* Поиск */
 .search-section {
     background: white;
     padding: 25px;
@@ -77,7 +76,6 @@ h2 {
     box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
 }
 
-/* Форма */
 .form-section {
     background: white;
     padding: 25px;
@@ -149,7 +147,6 @@ h2 {
     transform: translateY(-2px);
 }
 
-/* Список контактов */
 .contacts-section {
     background: white;
     padding: 25px;
@@ -264,7 +261,6 @@ h2 {
     box-shadow: 0 5px 15px rgba(250, 112, 154, 0.4);
 }
 
-/* Пустое состояние */
 .empty-message {
     text-align: center;
     color: #999;
@@ -276,7 +272,6 @@ h2 {
     border-radius: 10px;
 }
 
-/* Адаптивность */
 @media (max-width: 768px) {
     body {
         padding: 10px;
@@ -303,7 +298,6 @@ h2 {
     }
 }
 
-/* Анимации */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -319,7 +313,6 @@ h2 {
     animation: fadeIn 0.5s ease-out;
 }
 
-/* Стили для обязательных полей */
 input:required {
     border-left: 4px solid #667eea;
 }
@@ -328,7 +321,6 @@ input:invalid {
     border-left: 4px solid #fa709a;
 }
 
-/* Стили для подсказок */
 input::placeholder,
 textarea::placeholder {
     color: #999;
